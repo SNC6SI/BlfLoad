@@ -3,6 +3,7 @@
 #include <tchar.h>                     /* RTL   */
 #include <stdio.h>
 
+
 #define STRICT                         /* WIN32 */
 #include <windows.h>
 
@@ -31,7 +32,7 @@ int read_statistics(LPCTSTR pFileName, VBLFileStatisticsEx* pstatistics)
 
 
 
-int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canmsgid_, double* canchannel_)
+int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canmsgid_, double* canchannel_, double* cantime_)
 {
     HANDLE hFile;
     VBLObjectHeaderBase base;
@@ -73,6 +74,10 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
               for(i=0;i<8;i++) *(candata_ + (*pRead)*8 + i) = message.mData[i];
               *(canmsgid_ + (*pRead)) = message.mID;
               *(canchannel_ + (*pRead)) = message.mChannel;
+              if(message.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
+              	*(cantime_ + (*pRead)) = ((double)message.mHeader.mObjectTimeStamp)/1000000000;
+              else
+                *(cantime_ + (*pRead)) = ((double)message.mHeader.mObjectTimeStamp)/1000000000;
               BLFreeObject( hFile, &message.mHeader.mBase);
               *pRead += 1;
             }
@@ -86,6 +91,10 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
               for(i=0;i<8;i++) *(candata_ + (*pRead)*8 + i) = message2.mData[i];
               *(canmsgid_ + (*pRead)) = message2.mID;
               *(canchannel_ + (*pRead)) = message2.mChannel;
+              if(message2.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
+              	*(cantime_ + (*pRead)) = ((double)message2.mHeader.mObjectTimeStamp)/1000000000;
+              else
+                *(cantime_ + (*pRead)) = ((double)message2.mHeader.mObjectTimeStamp)/1000000000;
               BLFreeObject( hFile, &message2.mHeader.mBase);
               *pRead += 1;
             }
@@ -113,15 +122,29 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
     return bSuccess ? 0 : -1;
 }
 
-void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
-    LPCTSTR pFileName = _T( "chan124_new.blf");
-    DWORD dwRead;
-    double *candata, *canmsgid, *canchannel, cantime;
+void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
+{
+    // define
+    DWORD msgcnt;
+    double *candata, *canmsgid, *canchannel, *cantime;
     
-    int result = 0;
+    LPCTSTR pFileName;
+    char *filetoread;
+    size_t filenamelen;
+    int filestatus;
     
+    int result_statistic, result_read;
     VBLFileStatisticsEx statistics = { sizeof( statistics)};
-    result = read_statistics( pFileName, &statistics);
+    
+    // filename
+    filenamelen = mxGetN(prhs[0])*sizeof(mxChar)+1;
+    filetoread = mxMalloc(filenamelen);
+    filestatus = mxGetString(prhs[0], filetoread, (mwSize)filenamelen);   
+    pFileName = filetoread;
+    
+    // read blf statistics to determine output matrix size
+    result_statistic = 0;
+    result_statistic = read_statistics( pFileName, &statistics);
 
     // plhs[0]: candata
     plhs[0] = mxCreateDoubleMatrix (8,statistics.mObjectCount , mxREAL);
@@ -136,13 +159,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     canchannel = mxGetPr(plhs[2]);
     
     // plhs[3]: camtime
-    //plhs[3] = mxCreateDoubleMatrix (1,statistics.mObjectCount , mxREAL);
-    //cantime = mxGetPr(plhs[3]);
+    plhs[3] = mxCreateDoubleMatrix (1,statistics.mObjectCount , mxREAL);
+    cantime = mxGetPr(plhs[3]);
     
-    result = read_info( pFileName, &dwRead, candata, canmsgid, canchannel);
-    mxSetN(plhs[0],dwRead);
-    mxSetN(plhs[1],dwRead);
-    mxSetN(plhs[2],dwRead);
-  
+    result_read = 0;
+    result_read = read_info( pFileName, &msgcnt, candata, canmsgid, canchannel, cantime);
+    mxSetN(plhs[0],msgcnt);
+    mxSetN(plhs[1],msgcnt);
+    mxSetN(plhs[2],msgcnt);
+    mxSetN(plhs[3],msgcnt);
+    
+    
+//     mxFree(buf);
 }
 
