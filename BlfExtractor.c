@@ -8,15 +8,37 @@
 
 #include "binlog.h"                    /* BL    */
 
-int read_test( LPCTSTR pFileName, LPDWORD pRead)
+int read_statistics(LPCTSTR pFileName, VBLFileStatisticsEx* pstatistics)
+{
+    HANDLE hFile;
+    BOOL bSuccess;
+    hFile = BLCreateFile( pFileName, GENERIC_READ);
+
+    if ( INVALID_HANDLE_VALUE == hFile)
+    {
+        return -1;
+    }
+
+    BLGetFileStatisticsEx( hFile, pstatistics);
+    
+    if ( !BLCloseHandle( hFile))
+    {
+        return -1;
+    }
+
+    return bSuccess ? 0 : -1;
+}
+
+
+
+int read_info( LPCTSTR pFileName, LPDWORD pRead, double* b)
 {
     HANDLE hFile;
     VBLObjectHeaderBase base;
     VBLCANMessage message;
-    VBLEnvironmentVariable variable;
-    VBLEthernetFrame ethframe;
-    VBLAppText appText;
-    VBLFileStatisticsEx statistics = { sizeof( statistics)};
+    VBLCANMessage2 message2;
+    unsigned int i;
+
     BOOL bSuccess;
 
     if ( NULL == pRead)
@@ -34,7 +56,6 @@ int read_test( LPCTSTR pFileName, LPDWORD pRead)
         return -1;
     }
 
-    BLGetFileStatisticsEx( hFile, &statistics);
 
     bSuccess = TRUE;
     
@@ -49,53 +70,34 @@ int read_test( LPCTSTR pFileName, LPDWORD pRead)
             bSuccess = BLReadObjectSecure( hFile, &message.mHeader.mBase, sizeof(message));
             /* free memory for the CAN message */
             if( bSuccess) {
+              for(i=0;i<8;i++) *(b + (*pRead)*8 + i) = message.mData[i];
               BLFreeObject( hFile, &message.mHeader.mBase);
+              *pRead += 1;
+            }
+            break;
+        case BL_OBJ_TYPE_CAN_MESSAGE2:
+            /* read CAN message */
+            message2.mHeader.mBase = base;
+            bSuccess = BLReadObjectSecure( hFile, &message2.mHeader.mBase, sizeof(message2));
+            /* free memory for the CAN message */
+            if( bSuccess) {
+              for(i=0;i<8;i++) *(b + (*pRead)*8 + i) = message2.mData[i];
+              BLFreeObject( hFile, &message2.mHeader.mBase);
+              *pRead += 1;
             }
             break;
         case BL_OBJ_TYPE_ENV_INTEGER:
         case BL_OBJ_TYPE_ENV_DOUBLE:
         case BL_OBJ_TYPE_ENV_STRING:
         case BL_OBJ_TYPE_ENV_DATA:
-            /* read environment variable */
-            variable.mHeader.mBase = base;
-            bSuccess = BLReadObjectSecure( hFile, &variable.mHeader.mBase, sizeof(variable));
-            /* free memory for the environment variable */
-            if( bSuccess) {
-              BLFreeObject( hFile, &variable.mHeader.mBase);
-            }
-            break;
         case BL_OBJ_TYPE_ETHERNET_FRAME:
-            /* read ethernet frame */
-            ethframe.mHeader.mBase = base;
-            bSuccess = BLReadObjectSecure( hFile, &ethframe.mHeader.mBase, sizeof(ethframe));
-            /* free memory for the frame */
-            if( bSuccess) {
-              BLFreeObject( hFile, &ethframe.mHeader.mBase);
-            }
-            break;
         case BL_OBJ_TYPE_APP_TEXT:
-            /* read text */
-            appText.mHeader.mBase = base;
-            bSuccess = BLReadObjectSecure( hFile, &appText.mHeader.mBase, sizeof(appText));
-            if ( NULL != appText.mText)
-            {
-                printf( "%s\n", appText.mText);
-            }
-            /* free memory for the text */
-            if( bSuccess) {
-              BLFreeObject( hFile, &appText.mHeader.mBase);
-            }
-            break;
         default:
             /* skip all other objects */
             bSuccess = BLSkipObject( hFile, &base);
             break;
         }
-
-        if ( bSuccess)
-        {
-          *pRead += 1;
-        }
+        //mexPrintf("%s%u\n", "count: ", *pRead);
     }
 
     /* close file */
@@ -108,11 +110,20 @@ int read_test( LPCTSTR pFileName, LPDWORD pRead)
 }
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
-    LPCTSTR pFileName = _T( "test.blf");
+    LPCTSTR pFileName = _T( "chan124_new.blf");
     DWORD dwRead;
+    double *ptr;
+    
     int result = 0;
     
-    result = read_test( pFileName, &dwRead);
+    VBLFileStatisticsEx statistics = { sizeof( statistics)};
+    result = read_statistics( pFileName, &statistics);
+
+    
+    plhs[0] = mxCreateDoubleMatrix (8,statistics.mObjectCount , mxREAL);
+    ptr = mxGetPr(plhs[0]);
+    result = read_info( pFileName, &dwRead, ptr);
+    mxSetN(plhs[0],dwRead);
   
 }
 
