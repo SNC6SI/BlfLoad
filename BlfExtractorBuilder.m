@@ -9,10 +9,10 @@ function BlfExtractorBuilder
     % mex('-v',path3,srcFile,'binlog.lib','-g')
     
 	% 标注后编译还是能通过，说明path1 和 paht2的路径，本来就在vs2010的路径上
+    % mex('-v', '-g', srcFile, libFile)
     
     srcFile = 'BlfExtractor.c';
     libFile = 'binlog.lib';
-    
-    mex('-v', '-g', srcFile, libFile)
+    mex('-g', srcFile, libFile)
 
 end
