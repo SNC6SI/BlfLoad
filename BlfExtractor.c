@@ -165,6 +165,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     result_read = 0;
     result_read = read_info( pFileName, &msgcnt, candata, canmsgid, canchannel, cantime);
     
+    mexPrintf("%s\n", "BlfLoad -- Loads a CANoe/CANalyzer Data file into a Matlab Structure.");
+    mexPrintf("%s\t%s\t%s\n", "Shen, Chenghao", "snc6si@gmail.com", "20190501");
+    
     mxSetN(plhs[0],msgcnt);
     mxSetN(plhs[1],msgcnt);
     mxSetN(plhs[2],msgcnt);
