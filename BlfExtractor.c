@@ -164,12 +164,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     
     result_read = 0;
     result_read = read_info( pFileName, &msgcnt, candata, canmsgid, canchannel, cantime);
+    
     mxSetN(plhs[0],msgcnt);
     mxSetN(plhs[1],msgcnt);
     mxSetN(plhs[2],msgcnt);
     mxSetN(plhs[3],msgcnt);
     
-    
-//     mxFree(buf);
+    // free filetoread, which is created using mxMalloc
+    mxFree(filetoread);
 }
 
