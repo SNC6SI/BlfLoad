@@ -6,7 +6,7 @@ function BlfLoad(varargin)
         filetoread = varargin{1,1};
         [~,~,ext] = fileparts(filetoread);
         
-        if strcmpi(ext, '.blf') && exist(filetoread) == 2
+        if strcmpi(ext, '.blf') && exist(filetoread,'file') == 2
             fileready = 1;
             filetoread = which(filetoread);
         end
@@ -15,7 +15,10 @@ function BlfLoad(varargin)
     if ~fileready
         [filename, pathname] = uigetfile( ...
             {'*.blf', 'Canoe/Canalyzer Files (*.blf)';}, 'Pick a blf file');
-        filetoread = fullfile(pathname, filename);
+        if filename==0
+            return;
+        end
+        filetoread = fullfile(pathname, filename); 
     end
     tic
     [candata,canmsgid,canchannel,cantime]=BlfExtractor(filetoread);
