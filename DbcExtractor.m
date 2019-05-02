@@ -1,4 +1,28 @@
-function DBC_O = DbcExtractor
+function DBC_O = DbcExtractor(varargin)
+    fileready = 0;
+    DBC_O = struct;
+      
+    if ~isempty(varargin)
+        filetoread = varargin{1,1};
+        [~,~,ext] = fileparts(filetoread);
+        
+        if strcmpi(ext, '.blf') && exist(filetoread,'file') == 2
+            fileready = 1;
+            filetoread = which(filetoread);
+        end
+    end
+    
+    if ~fileready
+        [filename, pathname] = uigetfile( ...
+            {'*.dbc', 'Vector CANdb database (*.dbc)';}, 'Pick a blf file');
+        if filename==0
+            return;
+        end
+        filetoread = fullfile(pathname, filename); 
+    end
+
+    dbc = fileread(filetoread);
+
     bitmatrix = [7 :-1: 0;...
                 15 :-1: 8;...
                 23 :-1: 16;...
@@ -11,7 +35,7 @@ function DBC_O = DbcExtractor
     bitmatrix_m = reshape(bitmatrix',1,64);
     CRLF = [char(13) char(10)];
     
-    dbc = fileread('CAN1_PTCAN_V44.dbc');
+    
     BOblks = regexp(dbc, ['BO_ \d{1,} [a-zA-Z_].*?' CRLF CRLF], 'match')';
     BOblks_ = cellfun(@BOstruct,BOblks,'UniformOutput',false);
     DBC_O = vertcat(BOblks_{:});
