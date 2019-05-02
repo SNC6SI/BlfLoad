@@ -145,12 +145,18 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
           SGalgostr = [' + ' SGalgostr];  
        end
        str = [bb '(' num2str(sigmat(j, 1)) ',:)'];
-       if sigmat(j, 2)~=1
-           str = ['bitshift(' str ',-' num2str(sigmat(j, 2)-1) ')'];
-       end
-       if sigmat(j, 4)~=8
-           str = ['bitand(' str ',' num2str(2^sigmat(j, 4)-1) ')'];
-       end
+       
+       if sigmat(j, 4)==1
+           str = ['bitget(' str ',' num2str(sigmat(j, 2)) ')'];
+       else
+           if sigmat(j, 2)~=1
+               str = ['bitshift(' str ',-' num2str(sigmat(j, 2)-1) ')'];
+           end
+           if sigmat(j, 4)~=8
+               str = ['bitand(' str ',' num2str(2^sigmat(j, 4)-1) ')'];
+           end
+       end       
+       
        if sigmat(j, 5)~=0
            str = ['2^' num2str(sigmat(j, 5)) ' * ' str];
        end
