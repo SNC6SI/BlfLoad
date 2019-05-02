@@ -1,5 +1,7 @@
 function BlfLoad(varargin)
-
+    % =====================================================================
+    % input file check
+    % =====================================================================
     fileready = 0;
     
     if ~isempty(varargin)
@@ -20,14 +22,23 @@ function BlfLoad(varargin)
         end
         filetoread = fullfile(pathname, filename); 
     end
-    tic
-    [candata,canmsgid,canchannel,cantime]=BlfExtractor(filetoread);
-    toc
-    tic
-    assignin('base', 'candata', candata')
-    assignin('base', 'canmsgid', canmsgid')
-    assignin('base', 'canchannel', canchannel')
-    assignin('base', 'cantime', cantime')
-    toc
     
+    tic
+    % =====================================================================
+    % call DbcExtractor
+    % =====================================================================
+    [~] = MiscWriter;
+
+    % =====================================================================
+    % call mex function BlfExtractor
+    % =====================================================================
+    [b,msg,chan,tm]=BlfExtractor(filetoread);
+    
+    % =====================================================================
+    % call can_module_ext
+    % =====================================================================
+    can = can_module_ext(b,msg,chan,tm);
+    
+    assignin('base', 'can', can)
+    toc
 end
