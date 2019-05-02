@@ -1,4 +1,7 @@
 function DBC_O = DbcExtractor(varargin)
+    % =====================================================================
+    % input file check
+    % =====================================================================
     fileready = 0;
     DBC_O = struct;
       
@@ -22,7 +25,10 @@ function DBC_O = DbcExtractor(varargin)
     end
 
     dbc = fileread(filetoread);
-
+    
+    % =====================================================================
+    % global variables
+    % =====================================================================
     bitmatrix = [7 :-1: 0;...
                 15 :-1: 8;...
                 23 :-1: 16;...
@@ -35,10 +41,20 @@ function DBC_O = DbcExtractor(varargin)
     bitmatrix_m = reshape(bitmatrix',1,64);
     CRLF = [char(13) char(10)];
     
-    
+    % =====================================================================
+    % dbc process
+    % =====================================================================
     BOblks = regexp(dbc, ['BO_ \d{1,} [a-zA-Z_].*?' CRLF CRLF], 'match')';
     BOblks_ = cellfun(@BOstruct,BOblks,'UniformOutput',false);
     DBC_O = vertcat(BOblks_{:});
+    
+    % =====================================================================
+    % write module file
+    % =====================================================================
+    [pathname, filename] = fileparts(filetoread);
+    filename = strcat('module_', filename, '.m');
+    filetowrite = fullfile(pathname,filename);
+    WriteModule(filetowrite, DBC_O);
 end
 
 function BOblk_O =BOstruct(BOblk)
@@ -58,7 +74,7 @@ function BOblk_O =BOstruct(BOblk)
     else
         BOblk_O{1,1} = BOinfo{3};
     end
-    BOblk_O{1,2} = hex2dec(BOinfo{2});
+    BOblk_O{1,2} = str2double(BOinfo{2});
 end
 
 function SGblk_O = SGstruct(SGblk)
@@ -182,6 +198,11 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
     end
 end
 
+function WriteModule(filetowrite, DBC_I)
+    fid = fopen(filetowrite, 'w');
+    
+    fclose(fid);
+end
 
 
 
