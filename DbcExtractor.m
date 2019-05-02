@@ -9,7 +9,7 @@ function DBC_O = DbcExtractor(varargin)
         filetoread = varargin{1,1};
         [~,~,ext] = fileparts(filetoread);
         
-        if strcmpi(ext, '.blf') && exist(filetoread,'file') == 2
+        if strcmpi(ext, '.dbc') && exist(filetoread,'file') == 2
             fileready = 1;
             filetoread = which(filetoread);
         end
@@ -57,16 +57,11 @@ function DBC_O = DbcExtractor(varargin)
     WriteModule(filetowrite, DBC_O);
 end
 
-
-
-
 % #########################################################################
 % =========================================================================
 % sub-function definitions
 % =========================================================================
 % #########################################################################
-
-
 
 % =========================================================================
 % BOstruct
@@ -91,8 +86,6 @@ function BOblk_O =BOstruct(BOblk)
     BOblk_O{1,2} = str2double(BOinfo{2});
 end
 
-
-
 % =========================================================================
 % SGstruct
 % =========================================================================
@@ -103,8 +96,6 @@ function SGblk_O = SGstruct(SGblk)
     SGblk_O{2} = SGalgo(SGinfo{5}, SGinfo{6});
     SGblk_O{3} = SGinfo{8}(2:end-1);
 end
-
-
 
 % =========================================================================
 % SGalgo
