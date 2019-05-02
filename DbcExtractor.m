@@ -57,6 +57,20 @@ function DBC_O = DbcExtractor(varargin)
     WriteModule(filetowrite, DBC_O);
 end
 
+
+
+
+% #########################################################################
+% =========================================================================
+% sub-function definitions
+% =========================================================================
+% #########################################################################
+
+
+
+% =========================================================================
+% BOstruct
+% =========================================================================
 function BOblk_O =BOstruct(BOblk)
     global CRLF
     BOblk_O = cell(1,3);
@@ -77,19 +91,30 @@ function BOblk_O =BOstruct(BOblk)
     BOblk_O{1,2} = str2double(BOinfo{2});
 end
 
+
+
+% =========================================================================
+% SGstruct
+% =========================================================================
 function SGblk_O = SGstruct(SGblk)
     SGinfo = strsplit(SGblk);
-    SGblk_O= cell(1,2);
+    SGblk_O= cell(1,3);
     SGblk_O{1} = SGinfo{3};
     SGblk_O{2} = SGalgo(SGinfo{5}, SGinfo{6});
+    SGblk_O{3} = SGinfo{8}(2:end-1);
 end
 
+
+
+% =========================================================================
+% SGalgo
+% =========================================================================
 function SGalgostr = SGalgo(SGbit, SG2phy)
     global bitmatrix_m
     SGalgostr = '';
     
     % bit operation
-    % --------------------------------------------
+    % ---------------------------------------------------------------------
     sigbit = regexp(SGbit,'(\d+)\|(\d+)','tokens');
     sigstart = str2double(sigbit{1}{1});
     siglength = str2double(sigbit{1}{2});
@@ -101,6 +126,7 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
     bitstart_bytepos   = ceil(bitstart_idx/8);% 7
     
     % for shift
+    % ---------------------------------------------------------------------
     bit_temp = mod(bitend_idx,8);% 7
     if bit_temp
         bitend_bitpos = 8 - bit_temp + 1;
@@ -118,11 +144,13 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
     
     loopnum = bitstart_bytepos - bitend_bytepos + 1;
     sigmat = zeros(loopnum, 5);
+    
     % startbyte
     % start bit pos this line
     % end bit pos this line
     % bit cnt this line
     % bit cnt sum previous line
+    % ---------------------------------------------------------------------
     if loopnum == 1
         sigmat(loopnum, 1) = bitstart_bytepos;
         sigmat(loopnum, 2) = bitstart_bitpos;
@@ -198,11 +226,71 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
     end
 end
 
+% =========================================================================
+% WriteModule
+% =========================================================================
 function WriteModule(filetowrite, DBC_I)
     fid = fopen(filetowrite, 'w');
     
+    [~,funcname,~] = fileparts(filetowrite);
+    
+    str = ['function can = ' funcname '(b,msg,chan,tm,CHANNUM)'];
+    fprintf(fid, '%s\n\n\n', str);
+    str = 'can=[];';
+    fprintf(fid, '%s\n\n\n', str);
+    
+    loopnum = size(DBC_I, 1);
+    
+    for i=1:loopnum
+    % msg struct frame
+    % ---------------------------------------------------------------------
+        str = ['% ' repmat('=',1, 73)];
+        fprintf(fid, '%s\n', str);
+        
+        msg = ['MSG_' dec2hex(DBC_I{i,2})];
+        str = [msg ' = ' num2str(DBC_I{i,2}) ';'];
+        fprintf(fid, '%s\n\n', str);
+        
+        str = ['ix=find(msg == ' msg ' & chan == CHANNUM);'];
+        fprintf(fid, '%s\n', str);
+        
+        str = 'if ~isempty(ix)';
+        fprintf(fid, '%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} ...
+            ' = struct(''ID_hex'', '''', ''ID_dec'', [], ''nsamples'', 0, ''ctime'', []);'];
+        fprintf(fid, '\t%s\n\n', str);
+        
+        str = 'bb  = b(:,ix);';
+        fprintf(fid, '\t%s\n\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.ID_hex = ''' dec2hex(DBC_I{i,2}) ''';'];
+        fprintf(fid, '\t%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.ID_dec = ' num2str(DBC_I{i,2}) ';'];
+        fprintf(fid, '\t%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.nsample = length(ix);'];
+        fprintf(fid, '\t%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.ctime = tm(ix);'];
+        fprintf(fid, '\t%s\n\n', str);
+        
+    
+    % signals
+    % ---------------------------------------------------------------------
+        for j=1:size(DBC_I{i,3},1)
+            str = ['can.' DBC_I{i,1} '.units.' DBC_I{i,3}{j,1} ' = ''' DBC_I{i,3}{j,3} ''';'];
+            fprintf(fid, '\t%s\n', str);
+            
+            str = ['can.' DBC_I{i,1} '.' DBC_I{i,3}{j,1} ' = ' DBC_I{i,3}{j,2}];
+            fprintf(fid, '\t%s\n', str);
+        end
+        
+        str = 'end';
+        fprintf(fid, '%s\n\n\n', str);
+        
+    end
+    
     fclose(fid);
 end
-
-
-
