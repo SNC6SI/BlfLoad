@@ -57,6 +57,14 @@ function DBC_O = DbcExtractor(varargin)
     filetowrite = fullfile(pathname,filename);
     WriteModule(filetowrite, DBC_O);
     
+    % =====================================================================
+    % 
+    % =====================================================================
+    % if nargin == 2 && strcmpi(varargin{2},'snc')
+        % do nothing
+    % else   
+    %    DBC_O = '';
+    % end
     clear global bitmatrix CRLF
 end
 
@@ -148,7 +156,7 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
     loopnum = abs(bitstart_bytepos - bitend_bytepos) + 1;
     sigmat = zeros(loopnum, 5);
     
-    % startbyte
+    % which byte
     % start bit pos this line
     % end bit pos this line
     % bit cnt this line
@@ -169,7 +177,7 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
                 sigmat(i, 4) = sigmat(i, 3) - sigmat(i, 2) + 1;
                 sigmat(i, 5) = 0;
             elseif i<loopnum
-                if Endianness
+                if Endianness == 0
                     sigmat(i, 1) = sigmat(i-1, 1) - 1; % motorola
                 else
                     sigmat(i, 1) = sigmat(i-1, 1) + 1; % intel
