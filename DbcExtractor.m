@@ -29,6 +29,7 @@ function DBC_O = DbcExtractor(varargin)
     % =====================================================================
     % global variables
     % =====================================================================
+    global bitmatrix CRLF
     bitmatrix = [7 :-1: 0;...
                 15 :-1: 8;...
                 23 :-1: 16;...
@@ -37,8 +38,8 @@ function DBC_O = DbcExtractor(varargin)
                 47 :-1: 40;...
                 55 :-1: 48;...
                 63 :-1: 56];
-    global bitmatrix_m CRLF
-    bitmatrix_m = reshape(bitmatrix',1,64);
+    
+    bitmatrix = reshape(bitmatrix',1,64);
     CRLF = [char(13) char(10)];
     
     % =====================================================================
@@ -55,6 +56,8 @@ function DBC_O = DbcExtractor(varargin)
     filename = strcat('module_', filename, '.m');
     filetowrite = fullfile(pathname,filename);
     WriteModule(filetowrite, DBC_O);
+    
+    clear global bitmatrix CRLF
 end
 
 % #########################################################################
@@ -101,17 +104,27 @@ end
 % SGalgo
 % =========================================================================
 function SGalgostr = SGalgo(SGbit, SG2phy)
-    global bitmatrix_m
+    global bitmatrix
     SGalgostr = '';
     
     % bit operation
     % ---------------------------------------------------------------------
-    sigbit = regexp(SGbit,'(\d+)\|(\d+)','tokens');
-    sigstart = str2double(sigbit{1}{1});
-    siglength = str2double(sigbit{1}{2});
+    sigbitinfo = regexp(SGbit,'(\d+)\|(\d+)@(\d)','tokens');
+    sigstart = str2double(sigbitinfo{1}{1});
+    siglength = str2double(sigbitinfo{1}{2});
+    Endianness = str2double(sigbitinfo{1}{3});
     
-    bitend_idx = find(bitmatrix_m==sigstart,1); % 34
-    bitstart_idx = bitend_idx + siglength - 1; % 49
+    if Endianness==0 
+    % motorola
+    % ---------------------------------------------------------------------
+        bitend_idx = find(bitmatrix==sigstart,1); % 34
+        bitstart_idx = bitend_idx + siglength - 1; % 49
+    else
+    % intel
+    % ---------------------------------------------------------------------
+        bitstart_idx = find(bitmatrix==sigstart,1);
+        bitend_idx = find(bitmatrix==(sigstart + + siglength - 1),1);      
+    end
     
     bitend_bytepos = ceil(bitend_idx/8); % 5
     bitstart_bytepos   = ceil(bitstart_idx/8);% 7
@@ -132,8 +145,7 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
         bitstart_bitpos = 1;
     end
     
-    
-    loopnum = bitstart_bytepos - bitend_bytepos + 1;
+    loopnum = abs(bitstart_bytepos - bitend_bytepos) + 1;
     sigmat = zeros(loopnum, 5);
     
     % startbyte
@@ -157,7 +169,11 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
                 sigmat(i, 4) = sigmat(i, 3) - sigmat(i, 2) + 1;
                 sigmat(i, 5) = 0;
             elseif i<loopnum
-                sigmat(i, 1) = sigmat(i-1, 1) - 1;
+                if Endianness
+                    sigmat(i, 1) = sigmat(i-1, 1) - 1; % motorola
+                else
+                    sigmat(i, 1) = sigmat(i-1, 1) + 1; % intel
+                end
                 sigmat(i, 2) = 1;
                 sigmat(i, 3) = 8;
                 sigmat(i, 4) = sigmat(i, 3) - sigmat(i, 2) + 1;
