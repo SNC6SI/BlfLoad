@@ -132,6 +132,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     char *filetoread;
     size_t filenamelen;
     int filestatus;
+    double needmemorysize;
     
     int result_statistic, result_read;
     VBLFileStatisticsEx statistics = { sizeof( statistics)};
@@ -142,10 +143,21 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     filestatus = mxGetString(prhs[0], filetoread, (mwSize)filenamelen);   
     pFileName = filetoread;
     
+    // print author infos
+    mexPrintf("%s\n", "BlfLoad -- Loads a CANoe/CANalyzer Data file into a Matlab Structure.");
+    mexPrintf("%s\t%s\n\n", "Shen, Chenghao", "snc6si@gmail.com");
+    mexPrintf("%s%s\n", "Loading File: ", pFileName);
+    
     // read blf statistics to determine output matrix size
     result_statistic = 0;
     result_statistic = read_statistics( pFileName, &statistics);
-
+    
+    //print statistics info
+    mexPrintf("%s%u%s\n", "The blf file contains ", statistics.mObjectCount, " can messages");
+    
+    needmemorysize = ((double)statistics.mObjectCount)*(8+1+1+1)*8/1024/1024;
+    mexPrintf("%s%f%s\n", "This requires ", needmemorysize, " Mb Matlab Memory");
+    
     // plhs[0]: candata
     plhs[0] = mxCreateDoubleMatrix (8,statistics.mObjectCount , mxREAL);
     candata = mxGetPr(plhs[0]);
@@ -164,9 +176,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     
     result_read = 0;
     result_read = read_info( pFileName, &msgcnt, candata, canmsgid, canchannel, cantime);
-    
-    mexPrintf("%s\n", "BlfLoad -- Loads a CANoe/CANalyzer Data file into a Matlab Structure.");
-    mexPrintf("%s\t%s\t%s\n", "Shen, Chenghao", "snc6si@gmail.com", "20190501");
     
     mxSetN(plhs[0],msgcnt);
     mxSetN(plhs[1],msgcnt);
