@@ -44,7 +44,7 @@ end
 % #########################################################################
 
 % =========================================================================
-% WriteModuleExt
+% Write can_module_ext.m
 % =========================================================================
 function WriteModuleExt(module)
     filetowrite = 'can_module_ext';
@@ -105,6 +105,9 @@ function WriteModuleExt(module)
     end
     
     fclose(fid);
+    
+    pcode([filetowrite '.m'],'-inplace');
+    delete([filetowrite '.m']);
 end
 
 % =========================================================================
@@ -148,5 +151,8 @@ function WriteIdentify(DBC_I, dbcfilename)
     fprintf(fid, '%s\n', str);
 
     fclose(fid);
+    
+    pcode([filetowrite '.m'],'-inplace');
+    delete([filetowrite '.m']);
 end
 

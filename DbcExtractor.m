@@ -308,4 +308,8 @@ function WriteModule(filetowrite, DBC_I)
     end
     
     fclose(fid);
+    
+    pcode(filetowrite,'-inplace');
+    delete(filetowrite);
+    
 end
