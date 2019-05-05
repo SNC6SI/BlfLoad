@@ -77,7 +77,7 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
               if(message.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
               	*(cantime_ + (*pRead)) = ((double)message.mHeader.mObjectTimeStamp)/1000000000;
               else
-                *(cantime_ + (*pRead)) = ((double)message.mHeader.mObjectTimeStamp)/1000000000;
+                *(cantime_ + (*pRead)) = ((double)message.mHeader.mObjectTimeStamp)/100000;
               BLFreeObject( hFile, &message.mHeader.mBase);
               *pRead += 1;
             }
@@ -94,7 +94,7 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
               if(message2.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
               	*(cantime_ + (*pRead)) = ((double)message2.mHeader.mObjectTimeStamp)/1000000000;
               else
-                *(cantime_ + (*pRead)) = ((double)message2.mHeader.mObjectTimeStamp)/1000000000;
+                *(cantime_ + (*pRead)) = ((double)message2.mHeader.mObjectTimeStamp)/100000;
               BLFreeObject( hFile, &message2.mHeader.mBase);
               *pRead += 1;
             }
