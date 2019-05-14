@@ -32,7 +32,7 @@ function BlfLoad(varargin)
     % =====================================================================
     % call mex function BlfExtractor
     % =====================================================================
-    [b,msg,chan,tm]=BlfExtractor(filetoread);
+    [b,msg,chan,tm]=BlfExtractor(filetoread, 789456.0);
     
     % =====================================================================
     % call can_module_ext

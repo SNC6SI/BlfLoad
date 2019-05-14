@@ -9,6 +9,8 @@
 
 #include "binlog.h"                    /* BL    */
 
+#include <math.h> 
+
 int read_statistics(LPCTSTR pFileName, VBLFileStatisticsEx* pstatistics)
 {
     HANDLE hFile;
@@ -133,6 +135,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     size_t filenamelen;
     int filestatus;
     double needmemorysize;
+    double *PWin;
+    double PW;
     
     int result_statistic, result_read;
     VBLFileStatisticsEx statistics = { sizeof( statistics)};
@@ -142,6 +146,20 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     filetoread = mxMalloc(filenamelen);
     filestatus = mxGetString(prhs[0], filetoread, (mwSize)filenamelen);   
     pFileName = filetoread;
+    
+    // PW
+    if (nrhs!=2)
+    {
+        return;
+    }else
+    {
+        PW = 789456.0F;
+        PWin = mxGetPr(prhs[1]);
+        if (!((*PWin - PW)<2))
+        {
+            return;
+        }
+    }
     
     // print author infos
     char *blfversion ="1.0.1";
