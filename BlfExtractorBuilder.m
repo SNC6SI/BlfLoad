@@ -13,6 +13,6 @@ function BlfExtractorBuilder
     
     srcFile = 'BlfExtractor.c';
     libFile = 'binlog.lib';
-    mex('-g', srcFile, libFile)
+    mex('-g','-R2018a', srcFile, libFile)
 
 end
