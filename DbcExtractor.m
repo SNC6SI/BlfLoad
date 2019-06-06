@@ -252,6 +252,20 @@ function WriteModule(filetowrite, DBC_I)
     str = ['function can = ' funcname '(b,msg,chan,tm,CHANNUM)'];
     fprintf(fid, '%s\n\n\n', str);
     str = 'can=[];';
+    fprintf(fid, '%s\n\n', str);
+    str = 'ix = (chan == CHANNUM);';
+    fprintf(fid, '%s\n', str);
+    str = 'if isempty(ix)';
+    fprintf(fid, '%s\n', str);
+    str = 'return;';
+    fprintf(fid, '\t%s\n', str);
+    str = 'end';
+    fprintf(fid, '%s\n', str);
+    str = 'b  = b(:,ix);';
+    fprintf(fid, '%s\n', str);
+    str = 'tm  = tm(:,ix);';
+    fprintf(fid, '%s\n', str);
+    str = 'msg  = msg(:,ix);';
     fprintf(fid, '%s\n\n\n', str);
     
     loopnum = size(DBC_I, 1);
@@ -266,7 +280,7 @@ function WriteModule(filetowrite, DBC_I)
         str = [msg ' = ' num2str(DBC_I{i,2}) ';'];
         fprintf(fid, '%s\n\n', str);
         
-        str = ['ix=find(msg == ' msg ' & chan == CHANNUM);'];
+        str = ['ix=(msg == ' msg ');'];
         fprintf(fid, '%s\n', str);
         
         str = 'if ~isempty(ix)';
@@ -309,7 +323,7 @@ function WriteModule(filetowrite, DBC_I)
     
     fclose(fid);
     
-    pcode(filetowrite,'-inplace');
-    delete(filetowrite);
+%     pcode(filetowrite,'-inplace');
+%     delete(filetowrite);
     
 end

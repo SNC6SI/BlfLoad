@@ -106,8 +106,8 @@ function WriteModuleExt(module)
     
     fclose(fid);
     
-    pcode([filetowrite '.m'],'-inplace');
-    delete([filetowrite '.m']);
+%     pcode([filetowrite '.m'],'-inplace');
+%     delete([filetowrite '.m']);
 end
 
 % =========================================================================
@@ -152,7 +152,7 @@ function WriteIdentify(DBC_I, dbcfilename)
 
     fclose(fid);
     
-    pcode([filetowrite '.m'],'-inplace');
-    delete([filetowrite '.m']);
+%     pcode([filetowrite '.m'],'-inplace');
+%     delete([filetowrite '.m']);
 end
 
