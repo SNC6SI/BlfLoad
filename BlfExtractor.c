@@ -30,7 +30,7 @@ int read_statistics(LPCTSTR pFileName, VBLFileStatisticsEx* pstatistics)
 
 
 
-int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, mxUint32* canmsgid_, mxUint8* canchannel_, double* cantime_)
+int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canmsgid_, double* canchannel_, double* cantime_)
 {
     HANDLE hFile;
     VBLObjectHeaderBase base;
@@ -70,8 +70,8 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, mxUint32* can
             /* free memory for the CAN message */
             if( bSuccess) {
               for(i=0;i<8;i++) *(candata_ + (*pRead)*8 + i) = (double)message.mData[i];
-              *(canmsgid_ + (*pRead)) = (mxUint32)message.mID;
-              *(canchannel_ + (*pRead)) = (mxUint8)message.mChannel;
+              *(canmsgid_ + (*pRead)) = (double)message.mID;
+              *(canchannel_ + (*pRead)) = (double)message.mChannel;
               if(message.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
               	*(cantime_ + (*pRead)) = ((double)message.mHeader.mObjectTimeStamp)/1000000000;
               else
@@ -87,8 +87,8 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, mxUint32* can
             /* free memory for the CAN message */
             if( bSuccess) {
               for(i=0;i<8;i++) *(candata_ + (*pRead)*8 + i) = (double)message2.mData[i];
-              *(canmsgid_ + (*pRead)) = (mxUint32)message2.mID;
-              *(canchannel_ + (*pRead)) = (mxUint8)message2.mChannel;
+              *(canmsgid_ + (*pRead)) = (double)message2.mID;
+              *(canchannel_ + (*pRead)) = (double)message2.mChannel;
               if(message2.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
               	*(cantime_ + (*pRead)) = ((double)message2.mHeader.mObjectTimeStamp)/1000000000;
               else
@@ -124,10 +124,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
     // define
     DWORD msgcnt;
-    double *candata, *cantime;
-    mxUint8 *canchannel;
-    mxUint32 *canmsgid;
-    mwSize dims[2]={0};
+    double *candata, *cantime, *canmsgid, *canchannel;
     
     LPCTSTR pFileName;
     char *filetoread;
@@ -174,23 +171,20 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     //print statistics info
     mexPrintf("%s%u%s\n", "The blf file contains ", statistics.mObjectCount, " can messages");
     
-    needmemorysize = ((double)statistics.mObjectCount)*(64+1+1+8)/1024/1024;
+    needmemorysize = ((double)statistics.mObjectCount)*(8+1+1+1)*8/1024/1024;
     mexPrintf("%s%f%s\n", "This requires ", needmemorysize, " Mb Matlab Memory");
     
-    dims[1] = statistics.mObjectCount;
     // plhs[0]: candata
     plhs[0] = mxCreateDoubleMatrix (8,statistics.mObjectCount , mxREAL);
     candata = mxGetPr(plhs[0]);
     
     // plhs[1]: canmsgid
-    dims[0] = 1;
-    plhs[1] = mxCreateNumericArray (2, dims, mxUINT32_CLASS, mxREAL);
-    canmsgid = mxGetUint32s(plhs[1]);
+    plhs[1] = mxCreateDoubleMatrix (1,statistics.mObjectCount , mxREAL);
+    canmsgid = mxGetPr(plhs[1]);
     
     // plhs[2]: canchannel
-    dims[0] = 1;
-    plhs[2] = mxCreateNumericArray (2, dims, mxUINT8_CLASS, mxREAL);
-    canchannel = mxGetUint8s(plhs[2]);
+    plhs[2] = mxCreateDoubleMatrix (1,statistics.mObjectCount , mxREAL);
+    canchannel = mxGetPr(plhs[2]);
     
     // plhs[3]: camtime
     plhs[3] = mxCreateDoubleMatrix (1,statistics.mObjectCount , mxREAL);
