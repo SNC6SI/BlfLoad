@@ -29,7 +29,8 @@ function modulenames = MiscWriter
         for i=1:numel(dbc_towrite_file)
     % write module_(xxx).m
     % ---------------------------------------------------------------------
-            DBC_O = DbcExtractor(dbc_towrite_file{i});
+            [moduletowrite, DBC_O] = DbcExtractor(dbc_towrite_file{i});
+            WriteModule(moduletowrite, DBC_O);
     % write identify_(xxx).m
     % ---------------------------------------------------------------------
             WriteIdentify(DBC_O, identify_towrite_file{i});
@@ -50,64 +51,83 @@ function WriteModuleExt(module)
     filetowrite = 'can_module_ext';
     fid = fopen([filetowrite '.m'], 'w');
     
-    str = ['function can = ' filetowrite '(b,msg,chan,tm,uniquemsgid)'];
-    fprintf(fid, '%s\n\n\n', str);
+    str = ['function can = ' filetowrite '(b,msg,chan,tm)'];
+    fprintf(fid, '%s\n\n', str);
+    
+    str = 'uniquemsgid = msgidproc(msg,chan);';
+    fprintf(fid, '\t%s\n\n', str);
     
     loopnum = size(module,1);
     for i=1:loopnum
         str = ['if exist(''module_' module{i} ''',''file'')'];
-        fprintf(fid, '%s\n', str);
+        fprintf(fid, '\t%s\n', str);
         
         str = ['if exist(''identify_' module{i} '_can_chan'',''file'')'];
-        fprintf(fid, '\t%s\n', str);
+        fprintf(fid, '\t\t%s\n', str);
         
         str = ['CHAN_NUMBER = identify_' module{i} '_can_chan(uniquemsgid);'];
-        fprintf(fid, '\t\t%s\n', str);
+        fprintf(fid, '\t\t\t%s\n', str);
         
         str = ['fprintf(''module_' module{i} ' is on CAN %d\n'',CHAN_NUMBER);'];
-        fprintf(fid, '\t\t%s\n', str);
+        fprintf(fid, '\t\t\t%s\n', str);
         
         str = 'else';
-        fprintf(fid, '\t%s\n', str);
+        fprintf(fid, '\t\t%s\n', str);
         
         str = 'CHAN_NUMBER = 1;';
-        fprintf(fid, '\t\t%s\n', str);
+        fprintf(fid, '\t\t\t%s\n', str);
         
         str = 'end';
         fprintf(fid, '\t%s\n', str);
         
         str = ['can_tmp = module_' module{i} '(b,msg,chan,tm,CHAN_NUMBER);'];
-        fprintf(fid, '\t%s\n\n', str);
+        fprintf(fid, '\t\t%s\n\n', str);
         
         str = 'if isstruct(can_tmp)';
-        fprintf(fid, '\t%s\n', str);
+        fprintf(fid, '\t\t%s\n', str);
         
         str = 'fields = fieldnames(can_tmp);';
-        fprintf(fid, '\t\t%s\n', str);
+        fprintf(fid, '\t\t\t%s\n', str);
         
         str = 'for k=1:length(fields)';
-        fprintf(fid, '\t\t%s\n', str);
+        fprintf(fid, '\t\t\t%s\n', str);
         
         str = 'can.(fields{k}) = can_tmp.(fields{k});';
+        fprintf(fid, '\t\t\t\t%s\n', str);
+        
+        str = 'end';
         fprintf(fid, '\t\t\t%s\n', str);
         
         str = 'end';
         fprintf(fid, '\t\t%s\n', str);
         
         str = 'end';
-        fprintf(fid, '\t%s\n', str);
-        
-        str = 'end';
-        fprintf(fid, '%s\n', str);
-        
-        fprintf(fid, '\n\n');
+        fprintf(fid, '\t%s\n\n\n', str);
         
     end
     
-    fclose(fid);
+    str = 'end';
+    fprintf(fid, '%s\n\n\n', str);
     
-%     pcode([filetowrite '.m'],'-inplace');
-%     delete([filetowrite '.m']);
+    str = 'function uniquemsgid = msgidproc(msg,chan)';
+    fprintf(fid, '%s\n', str);
+    str = 'uniquemsgid = cell(1,4);';
+    fprintf(fid, '\t%s\n', str);
+    str = 'uniquemsgid{1} = unique(msg(chan==1));';
+    fprintf(fid, '\t%s\n', str);
+    str = 'uniquemsgid{2} = unique(msg(chan==2));';
+    fprintf(fid, '\t%s\n', str);
+    str = 'uniquemsgid{3} = unique(msg(chan==3));';
+    fprintf(fid, '\t%s\n', str);
+    str = 'uniquemsgid{4} = unique(msg(chan==4));';
+    fprintf(fid, '\t%s\n', str);
+    str = 'end';
+    fprintf(fid, '%s\n', str);
+    
+    fclose(fid);    
+    
+    pcode([filetowrite '.m'],'-inplace');
+    delete([filetowrite '.m']);
 end
 
 % =========================================================================
@@ -142,13 +162,99 @@ function WriteIdentify(DBC_I, dbcfilename)
     % tail
     % ---------------------------------------------------------------------
     fprintf(fid, '\n');
-    str = 'CHAN_NUMBER = find([chan1_count chan2_count chan3_count chan4_count]==max([chan1_count chan2_count chan3_count chan4_count]));';
-    fprintf(fid, '%s\n', str);
-    str = 'CHAN_NUMBER = CHAN_NUMBER(1);';
+    str = '[~, CHAN_NUMBER] = max([chan1_count chan2_count chan3_count chan4_count]);';
     fprintf(fid, '%s\n', str);
 
     fclose(fid);
     
-%     pcode([filetowrite '.m'],'-inplace');
-%     delete([filetowrite '.m']);
+    pcode([filetowrite '.m'],'-inplace');
+    delete([filetowrite '.m']);
+end
+
+
+% =========================================================================
+% WriteModule
+% =========================================================================
+function WriteModule(filetowrite, DBC_I)
+    fid = fopen(filetowrite, 'w');
+    
+    [~,funcname,~] = fileparts(filetowrite);
+    
+    str = ['function can = ' funcname '(b,msg,chan,tm,CHANNUM)'];
+    fprintf(fid, '%s\n\n\n', str);
+    str = 'can=[];';
+    fprintf(fid, '%s\n\n', str);
+    str = 'ix = (chan == CHANNUM);';
+    fprintf(fid, '%s\n', str);
+    str = 'if isempty(ix)';
+    fprintf(fid, '%s\n', str);
+    str = 'return;';
+    fprintf(fid, '\t%s\n', str);
+    str = 'end';
+    fprintf(fid, '%s\n', str);
+    str = 'b  = b(:,ix);';
+    fprintf(fid, '%s\n', str);
+    str = 'tm  = tm(:,ix);';
+    fprintf(fid, '%s\n', str);
+    str = 'msg  = msg(:,ix);';
+    fprintf(fid, '%s\n\n\n', str);
+    
+    loopnum = size(DBC_I, 1);
+    
+    for i=1:loopnum
+    % msg struct frame
+    % ---------------------------------------------------------------------
+        str = ['% ' repmat('=',1, 73)];
+        fprintf(fid, '%s\n', str);
+        
+        msg = ['MSG_' dec2hex(DBC_I{i,2})];
+        str = [msg ' = ' num2str(DBC_I{i,2}) ';'];
+        fprintf(fid, '%s\n\n', str);
+        
+        str = ['ix=(msg == ' msg ');'];
+        fprintf(fid, '%s\n', str);
+        
+        str = 'if ~isempty(ix)';
+        fprintf(fid, '%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} ...
+            ' = struct(''ID_hex'', '''', ''ID_dec'', [], ''nsamples'', 0, ''ctime'', []);'];
+        fprintf(fid, '\t%s\n\n', str);
+        
+        str = 'bb  = b(:,ix);';
+        fprintf(fid, '\t%s\n\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.ID_hex = ''' dec2hex(DBC_I{i,2}) ''';'];
+        fprintf(fid, '\t%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.ID_dec = ' num2str(DBC_I{i,2}) ';'];
+        fprintf(fid, '\t%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.nsample = length(ix);'];
+        fprintf(fid, '\t%s\n', str);
+        
+        str = ['can.' DBC_I{i,1} '.ctime = tm(ix);'];
+        fprintf(fid, '\t%s\n\n', str);
+        
+    
+    % signals
+    % ---------------------------------------------------------------------
+        for j=1:size(DBC_I{i,3},1)
+            str = ['can.' DBC_I{i,1} '.units.' DBC_I{i,3}{j,1} ' = ''' DBC_I{i,3}{j,3} ''';'];
+            fprintf(fid, '\t%s\n', str);
+            
+            str = ['can.' DBC_I{i,1} '.' DBC_I{i,3}{j,1} ' = ' DBC_I{i,3}{j,2}];
+            fprintf(fid, '\t%s\n', str);
+        end
+        
+        str = 'end';
+        fprintf(fid, '%s\n\n\n', str);
+        
+    end
+    
+    fclose(fid);
+    
+    pcode(filetowrite,'-inplace');
+    delete(filetowrite);
+    
 end

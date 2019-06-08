@@ -33,14 +33,11 @@ function BlfLoad(varargin)
     % call mex function BlfExtractor
     % =====================================================================
     [b,msg,chan,tm]=BlfExtractor(filetoread, 789456.0);
-    % =====================================================================
-    % unique msgid
-    % =====================================================================
-    uniquemsgid = msgidproc(msg,chan);
+
     % =====================================================================
     % call can_module_ext
     % =====================================================================
-    can = can_module_ext(b,msg,chan,tm,uniquemsgid);
+    can = can_module_ext(b,msg,chan,tm);
     
     assignin('base', 'can', can)
     toc

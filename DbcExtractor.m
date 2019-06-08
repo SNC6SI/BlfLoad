@@ -1,4 +1,4 @@
-function DBC_O = DbcExtractor(varargin)
+function [filetowrite, DBC_O] = DbcExtractor(varargin)
     % =====================================================================
     % input file check
     % =====================================================================
@@ -55,16 +55,7 @@ function DBC_O = DbcExtractor(varargin)
     [pathname, filename] = fileparts(filetoread);
     filename = strcat('module_', filename, '.m');
     filetowrite = fullfile(pathname,filename);
-    WriteModule(filetowrite, DBC_O);
     
-    % =====================================================================
-    % 
-    % =====================================================================
-    % if nargin == 2 && strcmpi(varargin{2},'snc')
-        % do nothing
-    % else   
-    %    DBC_O = '';
-    % end
     clear global bitmatrix CRLF
 end
 
@@ -239,91 +230,4 @@ function SGalgostr = SGalgo(SGbit, SG2phy)
     else
         SGalgostr = [SGalgostr ';'];
     end
-end
-
-% =========================================================================
-% WriteModule
-% =========================================================================
-function WriteModule(filetowrite, DBC_I)
-    fid = fopen(filetowrite, 'w');
-    
-    [~,funcname,~] = fileparts(filetowrite);
-    
-    str = ['function can = ' funcname '(b,msg,chan,tm,CHANNUM)'];
-    fprintf(fid, '%s\n\n\n', str);
-    str = 'can=[];';
-    fprintf(fid, '%s\n\n', str);
-    str = 'ix = (chan == CHANNUM);';
-    fprintf(fid, '%s\n', str);
-    str = 'if isempty(ix)';
-    fprintf(fid, '%s\n', str);
-    str = 'return;';
-    fprintf(fid, '\t%s\n', str);
-    str = 'end';
-    fprintf(fid, '%s\n', str);
-    str = 'b  = b(:,ix);';
-    fprintf(fid, '%s\n', str);
-    str = 'tm  = tm(:,ix);';
-    fprintf(fid, '%s\n', str);
-    str = 'msg  = msg(:,ix);';
-    fprintf(fid, '%s\n\n\n', str);
-    
-    loopnum = size(DBC_I, 1);
-    
-    for i=1:loopnum
-    % msg struct frame
-    % ---------------------------------------------------------------------
-        str = ['% ' repmat('=',1, 73)];
-        fprintf(fid, '%s\n', str);
-        
-        msg = ['MSG_' dec2hex(DBC_I{i,2})];
-        str = [msg ' = ' num2str(DBC_I{i,2}) ';'];
-        fprintf(fid, '%s\n\n', str);
-        
-        str = ['ix=(msg == ' msg ');'];
-        fprintf(fid, '%s\n', str);
-        
-        str = 'if ~isempty(ix)';
-        fprintf(fid, '%s\n', str);
-        
-        str = ['can.' DBC_I{i,1} ...
-            ' = struct(''ID_hex'', '''', ''ID_dec'', [], ''nsamples'', 0, ''ctime'', []);'];
-        fprintf(fid, '\t%s\n\n', str);
-        
-        str = 'bb  = b(:,ix);';
-        fprintf(fid, '\t%s\n\n', str);
-        
-        str = ['can.' DBC_I{i,1} '.ID_hex = ''' dec2hex(DBC_I{i,2}) ''';'];
-        fprintf(fid, '\t%s\n', str);
-        
-        str = ['can.' DBC_I{i,1} '.ID_dec = ' num2str(DBC_I{i,2}) ';'];
-        fprintf(fid, '\t%s\n', str);
-        
-        str = ['can.' DBC_I{i,1} '.nsample = length(ix);'];
-        fprintf(fid, '\t%s\n', str);
-        
-        str = ['can.' DBC_I{i,1} '.ctime = tm(ix);'];
-        fprintf(fid, '\t%s\n\n', str);
-        
-    
-    % signals
-    % ---------------------------------------------------------------------
-        for j=1:size(DBC_I{i,3},1)
-            str = ['can.' DBC_I{i,1} '.units.' DBC_I{i,3}{j,1} ' = ''' DBC_I{i,3}{j,3} ''';'];
-            fprintf(fid, '\t%s\n', str);
-            
-            str = ['can.' DBC_I{i,1} '.' DBC_I{i,3}{j,1} ' = ' DBC_I{i,3}{j,2}];
-            fprintf(fid, '\t%s\n', str);
-        end
-        
-        str = 'end';
-        fprintf(fid, '%s\n\n\n', str);
-        
-    end
-    
-    fclose(fid);
-    
-%     pcode(filetowrite,'-inplace');
-%     delete(filetowrite);
-    
 end
