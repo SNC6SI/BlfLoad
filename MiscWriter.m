@@ -50,7 +50,7 @@ function WriteModuleExt(module)
     filetowrite = 'can_module_ext';
     fid = fopen([filetowrite '.m'], 'w');
     
-    str = ['function can = ' filetowrite '(b,msg,chan,tm)'];
+    str = ['function can = ' filetowrite '(b,msg,chan,tm,uniquemsgid)'];
     fprintf(fid, '%s\n\n\n', str);
     
     loopnum = size(module,1);
@@ -61,7 +61,7 @@ function WriteModuleExt(module)
         str = ['if exist(''identify_' module{i} '_can_chan'',''file'')'];
         fprintf(fid, '\t%s\n', str);
         
-        str = ['CHAN_NUMBER = identify_' module{i} '_can_chan(msg,chan);'];
+        str = ['CHAN_NUMBER = identify_' module{i} '_can_chan(uniquemsgid);'];
         fprintf(fid, '\t\t%s\n', str);
         
         str = ['fprintf(''module_' module{i} ' is on CAN %d\n'',CHAN_NUMBER);'];
@@ -119,29 +119,26 @@ function WriteIdentify(DBC_I, dbcfilename)
     
     % header
     % ---------------------------------------------------------------------
-    str = ['function CHAN_NUMBER = ' filetowrite '(msg,canchannel)'];
+    str = ['function CHAN_NUMBER = ' filetowrite '(uniquemsgid)'];
     fprintf(fid, '%s\n\n\n', str);
     
-    str = {'chan1_count = 0;','chan2_count = 0;','chan3_count = 0;','chan4_count = 0;'};
-    fprintf(fid, '%s\n',str{:});
+    str = 'dbcid = [ ...';
+    fprintf(fid, '%s\n', str);
+    str = DBC_I(:,2);
+    fprintf(fid, '\t\t%u,...\n',str{:});
+    str = '0];';
+    fprintf(fid, '\t\t%s\n',str);
     
     fprintf(fid, '\n');
     
     % loop
     % ---------------------------------------------------------------------
-    loopnum = size(DBC_I,1);
-    for i=1:loopnum
-        iddec = num2str(DBC_I{i,2});
-        for j=1:4
-            chan = num2str(j);
-            str = ['if ~isempty(find(msg == ' iddec ' & canchannel == ' chan ',1))'];
-            fprintf(fid, '%s\n', str);
-            str = ['chan' chan '_count = chan' chan '_count+1;'];
-            fprintf(fid, '%s\n', str);
-            str = 'end';
-            fprintf(fid, '%s\n', str);
-        end 
-    end
+
+    for i=1:4
+       str = ['chan' num2str(i) '_count = numel(intersect(uniquemsgid{1,'...
+           num2str(i) '}, dbcid));'];
+       fprintf(fid, '%s\n', str);
+    end 
     % tail
     % ---------------------------------------------------------------------
     fprintf(fid, '\n');
@@ -155,4 +152,3 @@ function WriteIdentify(DBC_I, dbcfilename)
 %     pcode([filetowrite '.m'],'-inplace');
 %     delete([filetowrite '.m']);
 end
-
