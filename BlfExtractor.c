@@ -158,7 +158,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     }
     
     // print author infos
-    char *blfversion ="1.1.0";
+    char *blfversion ="1.2.0";
     mexPrintf("%s\n", "BlfLoad -- Loads a CANoe/CANalyzer Data file into a Matlab Structure.");
     mexPrintf("%s%s\t", "Version: ", blfversion);
     mexPrintf("%s\t%s\n\n", "by Shen, Chenghao", "snc6si@gmail.com");
