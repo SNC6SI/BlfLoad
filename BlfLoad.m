@@ -21,8 +21,8 @@ function varargout = BlfLoad(varargin)
         if filename==0
             if nargout > 0
                 varargout{1,1} = [];
-                return;
             end
+            return;
         end
         filetoread = fullfile(pathname, filename); 
     end
