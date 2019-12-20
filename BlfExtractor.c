@@ -2,14 +2,10 @@
 #include "mex.h"
 #include <tchar.h>                     /* RTL   */
 #include <stdio.h>
-
-
-#define STRICT                         /* WIN32 */
 #include <windows.h>
-
 #include "binlog.h"                    /* BL    */
-
 #include <math.h> 
+#define STRICT                         /* WIN32 */
 
 int read_statistics(LPCTSTR pFileName, VBLFileStatisticsEx* pstatistics)
 {
@@ -125,7 +121,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     // define
     DWORD msgcnt;
     double *candata, *cantime, *canmsgid, *canchannel;
-    
     LPCTSTR pFileName;
     char *filetoread;
     size_t filenamelen;
@@ -133,6 +128,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     double needmemorysize;
     double *PWin;
     double PW;
+    double *pswitchFlag;
+    unsigned char switchFlag = 0;
     
     int result_statistic, result_read;
     VBLFileStatisticsEx statistics = { sizeof( statistics)};
@@ -144,7 +141,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     pFileName = filetoread;
     
     // PW
-    if (nrhs!=2)
+    if (nrhs<2)
     {
         return;
     }else
@@ -156,23 +153,33 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
             return;
         }
     }
-    
+    if (nrhs==3)
+    {
+        pswitchFlag = mxGetPr(prhs[2]);
+        switchFlag = (unsigned char)(*pswitchFlag);
+    }
+
     // print author infos
-    char *blfversion ="1.2.0";
-    mexPrintf("%s\n", "BlfLoad -- Loads a CANoe/CANalyzer Data file into a Matlab Structure.");
-    mexPrintf("%s%s\t", "Version: ", blfversion);
-    mexPrintf("%s\t%s\n\n", "by Shen, Chenghao", "snc6si@gmail.com");
-    mexPrintf("%s%s\n", "Loading File: ", pFileName);
-    
+    if(switchFlag!=1U)
+    {
+        char *blfversion ="1.3.0";
+        mexPrintf("%s\n", "BlfLoad -- Loads a CANoe/CANalyzer Data file into a Matlab Structure.");
+        mexPrintf("%s%s\t", "Version: ", blfversion);
+        mexPrintf("%s\t%s\n\n", "by Shen, Chenghao", "snc6si@gmail.com");
+        mexPrintf("%s%s\n", "Loading File: ", pFileName);
+    }
     // read blf statistics to determine output matrix size
     result_statistic = 0;
     result_statistic = read_statistics( pFileName, &statistics);
     
-    //print statistics info
-    mexPrintf("%s%u%s\n", "The blf file contains ", statistics.mObjectCount, " can messages");
-    
-    needmemorysize = ((double)statistics.mObjectCount)*(8+1+1+1)*8/1024/1024;
-    mexPrintf("%s%f%s\n", "This requires ", needmemorysize, " Mb Matlab Memory");
+    if(switchFlag!=1U)
+    {
+        //print statistics info
+        mexPrintf("%s%u%s\n", "The blf file contains ", statistics.mObjectCount, " can messages");
+        
+        needmemorysize = ((double)statistics.mObjectCount)*(8+1+1+1)*8/1024/1024;
+        mexPrintf("%s%f%s\n", "This requires ", needmemorysize, " Mb Matlab Memory");
+    }
     
     // plhs[0]: candata
     plhs[0] = mxCreateDoubleMatrix (8,statistics.mObjectCount , mxREAL);
