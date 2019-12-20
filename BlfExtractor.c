@@ -166,8 +166,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
         mexPrintf("%s\n", "BlfLoad -- Loads a CANoe/CANalyzer Data file into a Matlab Structure.");
         mexPrintf("%s%s\t", "Version: ", blfversion);
         mexPrintf("%s\t%s\n\n", "by Shen, Chenghao", "snc6si@gmail.com");
-        mexPrintf("%s%s\n", "Loading File: ", pFileName);
     }
+        mexPrintf("%s%s\n", "Loading File: ", pFileName);
     // read blf statistics to determine output matrix size
     result_statistic = 0;
     result_statistic = read_statistics( pFileName, &statistics);
