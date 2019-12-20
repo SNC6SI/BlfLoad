@@ -1,11 +1,11 @@
-function modulenames = MiscWriter
+function result = MiscWriter(pathname)
     % =====================================================================
     % check towrite m-files
     % =====================================================================
-    files_struct = dir(pwd);
+    files_struct = dir(pathname);
     files_name = {files_struct.name}';
     [~,filenames,exts] = cellfun(@fileparts,files_name,'UniformOutput',0);
-    ext_dbc_bool = strcmp(exts,'.dbc');
+    ext_dbc_bool = strcmpi(exts,'.dbc');
     ext_dbc_idx = find(ext_dbc_bool);
     
     modulenamepart = filenames(ext_dbc_bool);
@@ -19,23 +19,45 @@ function modulenames = MiscWriter
     % =====================================================================
     % call sub-functions
     % =====================================================================
-    if ~isempty(ext_dbc_idx)
-    % write can_module_ext.m
-    % ---------------------------------------------------------------------    
-        WriteModuleExt(modulenamepart);
-    end
-    
-    if ~isempty(dbc_towrite_file)
+    if isempty(dbc_towrite_file)
+        modulenamep_tmp = 'SNC6SI';
+        DBC_O = {};
+        while ~isempty(modulenamep_tmp)
+            [modulenamep_tmp, DBC_O_tmp] = DbcExtractor;
+            if isempty(modulenamep_tmp)
+                if isempty(modulenamepart)
+                    result = false;
+                    return;
+                end
+            else
+                modulenamepart = [modulenamepart; modulenamep_tmp];
+                DBC_O = [DBC_O; {DBC_O_tmp}];
+            end
+        end
+        for i=1:numel(modulenamepart)
+            % write module_(xxx).m
+            % -------------------------------------------------------------
+            WriteModule(DBC_O{i}, modulenamepart{i}, pathname);
+            % write identify_(xxx).m
+            % -------------------------------------------------------------
+            WriteIdentify(DBC_O{i}, modulenamepart{i}, pathname);
+        end
+    else
         for i=1:numel(dbc_towrite_file)
-    % write module_(xxx).m
-    % ---------------------------------------------------------------------
-            [moduletowrite, DBC_O] = DbcExtractor(dbc_towrite_file{i});
-            WriteModule(moduletowrite, DBC_O);
-    % write identify_(xxx).m
-    % ---------------------------------------------------------------------
-            WriteIdentify(DBC_O, identify_towrite_file{i});
+            % write module_(xxx).m
+            % -------------------------------------------------------------
+            [~, DBC_O] = DbcExtractor(dbc_towrite_file{i});
+            WriteModule(DBC_O, modulenamepart{i}, pathname);
+            % write identify_(xxx).m
+            % -------------------------------------------------------------
+            WriteIdentify(DBC_O, identify_towrite_file{i}, pathname);
         end 
     end
+    
+    % write can_module_ext.m
+    % ---------------------------------------------------------------------  
+    WriteModuleExt(modulenamepart, pathname);
+    result = true;
 end
 
 % #########################################################################
@@ -47,11 +69,12 @@ end
 % =========================================================================
 % Write can_module_ext.m
 % =========================================================================
-function WriteModuleExt(module)
-    filetowrite = 'can_module_ext';
+function WriteModuleExt(module, pathname)
+    functionname = 'can_module_ext';
+    filetowrite = fullfile(pathname, functionname);
     fid = fopen([filetowrite '.m'], 'w');
     
-    str = ['function can = ' filetowrite '(b,msg,chan,tm)'];
+    str = ['function can = ' functionname '(b,msg,chan,tm)'];
     fprintf(fid, '%s\n\n', str);
     
     str = 'uniquemsgid = msgidproc(msg,chan);';
@@ -133,13 +156,14 @@ end
 % =========================================================================
 % WriteIdentify
 % =========================================================================
-function WriteIdentify(DBC_I, dbcfilename)
-    filetowrite = ['identify_' dbcfilename '_can_chan'];
+function WriteIdentify(DBC_I, dbcfilename, pathname)
+    functionname = ['identify_' dbcfilename '_can_chan'];
+    filetowrite = fullfile(pathname, functionname);
     fid = fopen([filetowrite '.m'], 'w');
     
     % header
     % ---------------------------------------------------------------------
-    str = ['function CHAN_NUMBER = ' filetowrite '(uniquemsgid)'];
+    str = ['function CHAN_NUMBER = ' functionname '(uniquemsgid)'];
     fprintf(fid, '%s\n\n\n', str);
     
     str = 'dbcid = [ ...';
@@ -175,12 +199,12 @@ end
 % =========================================================================
 % WriteModule
 % =========================================================================
-function WriteModule(filetowrite, DBC_I)
-    fid = fopen(filetowrite, 'w');
+function WriteModule(DBC_I, filetowrite, pathname)
+    functionname = ['module_' filetowrite];
+    filetowrite = fullfile(pathname, functionname);
+    fid = fopen([filetowrite '.m'], 'w');
     
-    [~,funcname,~] = fileparts(filetowrite);
-    
-    str = ['function can = ' funcname '(b,msg,chan,tm,CHANNUM)'];
+    str = ['function can = ' functionname '(b,msg,chan,tm,CHANNUM)'];
     fprintf(fid, '%s\n\n\n', str);
     str = 'can=[];';
     fprintf(fid, '%s\n\n', str);
@@ -254,7 +278,7 @@ function WriteModule(filetowrite, DBC_I)
     
     fclose(fid);
     
-    pcode(filetowrite,'-inplace');
-    delete(filetowrite);
+    pcode([filetowrite '.m'],'-inplace');
+    delete([filetowrite '.m']);
     
 end

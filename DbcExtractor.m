@@ -1,4 +1,4 @@
-function [filetowrite, DBC_O] = DbcExtractor(varargin)
+function [modulename, DBC_O] = DbcExtractor(varargin)
     % =====================================================================
     % input file check
     % =====================================================================
@@ -6,19 +6,23 @@ function [filetowrite, DBC_O] = DbcExtractor(varargin)
     DBC_O = struct;
       
     if ~isempty(varargin)
-        filetoread = varargin{1,1};
-        [~,~,ext] = fileparts(filetoread);
-        
-        if strcmpi(ext, '.dbc') && exist(filetoread,'file') == 2
-            fileready = 1;
-            filetoread = which(filetoread);
+        if ~isempty(varargin{1,1})
+            filetoread = varargin{1,1};
+            [~,~,ext] = fileparts(filetoread);
+
+            if strcmpi(ext, '.dbc') && exist(filetoread,'file') == 2
+                fileready = 1;
+                filetoread = which(filetoread);
+            end
         end
     end
     
     if ~fileready
         [filename, pathname] = uigetfile( ...
-            {'*.dbc', 'Vector CANdb database (*.dbc)';}, 'Pick a blf file');
+            {'*.dbc', 'Vector CANdb database (*.dbc)'; ...
+             '*.*', 'CAN dbc file in txt format (*.*)'}, 'Pick a dbc file');
         if filename==0
+            modulename = '';
             return;
         end
         filetoread = fullfile(pathname, filename); 
@@ -52,9 +56,10 @@ function [filetowrite, DBC_O] = DbcExtractor(varargin)
     % =====================================================================
     % write module file
     % =====================================================================
-    [pathname, filename] = fileparts(filetoread);
-    filename = strcat('module_', filename, '.m');
-    filetowrite = fullfile(pathname,filename);
+    % [pathname, filename] = fileparts(filetoread);
+    % filename = strcat('module_', filename, '.m');
+    % filetowrite = fullfile(pathname,filename);
+    [~, modulename, ~] = fileparts(filetoread);
     
     clear global bitmatrix CRLF
 end
