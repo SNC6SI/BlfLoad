@@ -1,4 +1,4 @@
-function BlfLoad(varargin)
+function varargout = BlfLoad(varargin) 
     % =====================================================================
     % input file check
     % =====================================================================
@@ -11,6 +11,7 @@ function BlfLoad(varargin)
         if strcmpi(ext, '.blf') && exist(filetoread,'file') == 2
             fileready = 1;
             filetoread = which(filetoread);
+            pathname = fileparts(filetoread);
         end
     end
     
@@ -18,27 +19,65 @@ function BlfLoad(varargin)
         [filename, pathname] = uigetfile( ...
             {'*.blf', 'Canoe/Canalyzer Files (*.blf)';}, 'Pick a blf file');
         if filename==0
-            return;
+            if nargout > 0
+                varargout{1,1} = [];
+                return;
+            end
         end
         filetoread = fullfile(pathname, filename); 
     end
     
+    switchFlag = 0;
+    if nargin==2
+        switchFlag = varargin{1,2};
+    end
+    
+    if pathname(end) == '\'
+        pathname = pathname(1:end-1);
+    end
+    
+    %----------------------------------------------------------------------
     tic
     % =====================================================================
     % call DbcExtractor
     % =====================================================================
-    [~] = MiscWriter;
+    matlabPath = path;
+    pathFlag = isempty(strfind(matlabPath, pathname));
+    addpath(pathname)
+    clearnup = onCleanup(@()rmMatlabPath(pathname, pathFlag));
+    miscResult = MiscWriter(pathname);
+    if ~miscResult
+        if nargout > 0
+            varargout{1,1} = [];
+        end
+        fprintf(2, '\n\t%s\n\n', 'Please select corresponding dbc files!')
+        return;
+    end
 
     % =====================================================================
     % call mex function BlfExtractor
     % =====================================================================
-    [b,msg,chan,tm]=BlfExtractor(filetoread, 789456.0);
+    [b,msg,chan,tm]=BlfExtractor(filetoread, 789456.0, switchFlag);
 
     % =====================================================================
     % call can_module_ext
     % =====================================================================
     can = can_module_ext(b,msg,chan,tm);
-    
-    assignin('base', 'can', can)
+    if nargout==0
+        assignin('base', 'can', can)
+    else
+        varargout{1,1} = can;
+    end
+    % ---------------------------------------------------------------------
     toc
+end
+
+% =====================================================================
+% call cleanup
+% =====================================================================
+function rmMatlabPath(pathIn, pathFlag)
+    if pathFlag
+        rmpath(pathIn);
+        fclose('all');
+    end
 end
