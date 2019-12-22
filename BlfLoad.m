@@ -10,7 +10,7 @@ function varargout = BlfLoad(varargin)
         
         if strcmpi(ext, '.blf') && exist(filetoread,'file') == 2
             fileready = 1;
-            filetoread = which(filetoread);
+            % filetoread = which(filetoread)
             pathname = fileparts(filetoread);
         end
     end
