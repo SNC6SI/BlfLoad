@@ -10,8 +10,27 @@ function varargout = BlfLoad(varargin)
         
         if strcmpi(ext, '.blf') && exist(filetoread,'file') == 2
             fileready = 1;
-            filetoread = which(filetoread)
-            pathname = fileparts(filetoread);
+            % 'which' command cannot return fullpath if the input path is 
+            % not full & is not on the Matlab's search path
+            % 
+            % temporarily add this non-full path onto search path solve the
+            % problem
+            tmp = which(filetoread);
+            if isempty(tmp)
+                pathtoadd = fileparts(filetoread);
+                addpath(pathtoadd);
+                tmp = which(filetoread);
+                if ~isempty(tmp)
+                    filetoread = tmp;
+                    pathname = fileparts(filetoread);
+                else
+                    fileready = 0;
+                end
+                rmpath(pathtoadd);
+            else
+                filetoread = tmp;
+                pathname = fileparts(filetoread);
+            end
         end
     end
     
