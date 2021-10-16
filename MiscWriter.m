@@ -149,8 +149,8 @@ function WriteModuleExt(module, pathname)
     
     fclose(fid);    
     
-    pcode([filetowrite '.m'],'-inplace');
-    delete([filetowrite '.m']);
+%     pcode([filetowrite '.m'],'-inplace');
+%     delete([filetowrite '.m']);
 end
 
 % =========================================================================
@@ -191,8 +191,8 @@ function WriteIdentify(DBC_I, dbcfilename, pathname)
 
     fclose(fid);
     
-    pcode([filetowrite '.m'],'-inplace');
-    delete([filetowrite '.m']);
+%     pcode([filetowrite '.m'],'-inplace');
+%     delete([filetowrite '.m']);
 end
 
 
@@ -278,7 +278,7 @@ function WriteModule(DBC_I, filetowrite, pathname)
     
     fclose(fid);
     
-    pcode([filetowrite '.m'],'-inplace');
-    delete([filetowrite '.m']);
+%     pcode([filetowrite '.m'],'-inplace');
+%     delete([filetowrite '.m']);
     
 end
