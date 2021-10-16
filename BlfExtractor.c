@@ -7,6 +7,7 @@
 #include <math.h> 
 #define STRICT                         /* WIN32 */
 
+static BYTE dlcMapping[17] = {0,1,2,3,4,5,6,7,8,12,16,20,24,32,48,64};
 int read_statistics(LPCTSTR pFileName, VBLFileStatisticsEx* pstatistics)
 {
     HANDLE hFile;
@@ -32,6 +33,7 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
     VBLObjectHeaderBase base;
     VBLCANMessage message;
     VBLCANMessage2 message2;
+    VBLCANFDMessage64 messageFD;
     unsigned int i;
 
     BOOL bSuccess;
@@ -65,7 +67,7 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
             bSuccess = BLReadObjectSecure( hFile, &message.mHeader.mBase, sizeof(message));
             /* free memory for the CAN message */
             if( bSuccess) {
-              for(i=0;i<8;i++) *(candata_ + (*pRead)*8 + i) = (double)message.mData[i];
+              for(i=0;i<8;i++) *(candata_ + (*pRead)*64 + i) = (double)message.mData[i];
               *(canmsgid_ + (*pRead)) = (double)message.mID;
               *(canchannel_ + (*pRead)) = (double)message.mChannel;
               if(message.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
@@ -82,7 +84,7 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
             bSuccess = BLReadObjectSecure( hFile, &message2.mHeader.mBase, sizeof(message2));
             /* free memory for the CAN message */
             if( bSuccess) {
-              for(i=0;i<8;i++) *(candata_ + (*pRead)*8 + i) = (double)message2.mData[i];
+              for(i=0;i<8;i++) *(candata_ + (*pRead)*64 + i) = (double)message2.mData[i];
               *(canmsgid_ + (*pRead)) = (double)message2.mID;
               *(canchannel_ + (*pRead)) = (double)message2.mChannel;
               if(message2.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
@@ -91,6 +93,21 @@ int read_info( LPCTSTR pFileName, LPDWORD pRead, double* candata_, double* canms
                 *(cantime_ + (*pRead)) = ((double)message2.mHeader.mObjectTimeStamp)/100000;
               BLFreeObject( hFile, &message2.mHeader.mBase);
               *pRead += 1;
+            }
+            break;
+        case BL_OBJ_TYPE_CAN_FD_MESSAGE_64:
+            messageFD.mHeader.mBase = base;
+            bSuccess = BLReadObjectSecure( hFile, &messageFD.mHeader.mBase, sizeof(messageFD));
+            if( bSuccess) {
+                for(i=0;i<dlcMapping[messageFD.mDLC];i++) *(candata_ + (*pRead)*64 + i) = (double)messageFD.mData[i];
+                *(canmsgid_ + (*pRead)) = (double)messageFD.mID;
+                *(canchannel_ + (*pRead)) = (double)messageFD.mChannel;
+                if(messageFD.mHeader.mObjectFlags==BL_OBJ_FLAG_TIME_ONE_NANS)
+                *(cantime_ + (*pRead)) = ((double)messageFD.mHeader.mObjectTimeStamp)/1000000000;
+                else
+                *(cantime_ + (*pRead)) = ((double)messageFD.mHeader.mObjectTimeStamp)/100000;
+                BLFreeObject( hFile, &messageFD.mHeader.mBase);
+                *pRead += 1;
             }
             break;
         case BL_OBJ_TYPE_ENV_INTEGER:
@@ -175,14 +192,14 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     if(switchFlag!=1U)
     {
         //print statistics info
-        mexPrintf("%s%u%s\n", "The blf file contains ", statistics.mObjectCount, " can messages");
+        mexPrintf("%s%u%s\n\n", "The blf file contains ", statistics.mObjectCount, " can(fd) messages");
         
         needmemorysize = ((double)statistics.mObjectCount)*(8+1+1+1)*8/1024/1024;
-        mexPrintf("%s%f%s\n", "This requires ", needmemorysize, " Mb Matlab Memory");
+        //mexPrintf("%s%f%s\n", "This requires ", needmemorysize, " Mb Matlab Memory");
     }
     
     // plhs[0]: candata
-    plhs[0] = mxCreateDoubleMatrix (8,statistics.mObjectCount , mxREAL);
+    plhs[0] = mxCreateDoubleMatrix (64,statistics.mObjectCount , mxREAL);
     candata = mxGetPr(plhs[0]);
     
     // plhs[1]: canmsgid
